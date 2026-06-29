@@ -1932,3 +1932,21 @@ body.zen-mode #typing-display {
 .icon-btn {
     position: relative;
 }
+
+.update-toast {
+    position: fixed;
+    bottom: 1rem;
+    right: 1rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--accent);
+    color: var(--text-primary);
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    z-index: 9999;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    animation: fadeIn 0.3s ease;
+}

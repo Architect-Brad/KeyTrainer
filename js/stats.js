@@ -603,6 +603,7 @@ const Stats = {
         this.renderConfusionMatrix(keyStats);
         this.renderBigramAnalysis(bigramStats);
         this.renderHistory(allTests);
+        this.renderBests(allTests);
     },
 
     computeStats(allTests) {
@@ -1212,5 +1213,51 @@ const Stats = {
             replayTd.appendChild(replayBtn);
             tbody.appendChild(tr);
         });
+    },
+
+    renderBests(allTests) {
+        const container = document.getElementById('personal-bests');
+        if (!container) return;
+        container.innerHTML = '';
+
+        const modes = ['practice', 'words', 'quotes', 'custom', 'zen', 'code'];
+        const modeLabels = { practice: 'Practice', words: 'Words', quotes: 'Quotes', custom: 'Custom', zen: 'Zen', code: 'Code' };
+
+        const bests = {};
+        for (const t of allTests) {
+            const m = t.mode || 'practice';
+            if (!bests[m]) bests[m] = { wpm: 0, acc: 0, raw: 0, cons: 0, date: '', entry: null };
+            if (t.wpm > bests[m].wpm || (t.wpm === bests[m].wpm && t.accuracy > bests[m].acc)) {
+                bests[m] = { wpm: t.wpm, acc: t.accuracy, raw: t.rawWpm, cons: t.consistency, date: t.date, entry: t };
+            }
+        }
+
+        for (const mode of modes) {
+            const b = bests[mode];
+            const card = document.createElement('div');
+            card.className = 'stat-card';
+            if (b) {
+                const wpmC = b.wpm >= 80 ? 'color:#4ade80' : b.wpm >= 50 ? 'color:#fbbf24' : 'color:#f87171';
+                card.innerHTML = `
+                    <div class="bests-mode">${modeLabels[mode] || mode}</div>
+                    <div class="stat-value" style="${wpmC}">${b.wpm}</div>
+                    <div class="stat-label">${b.acc}% · ${b.raw} raw</div>
+                    <div class="stat-sub">${b.cons ? b.cons + '% cons' : ''}</div>
+                `;
+                card.style.cursor = 'pointer';
+                card.title = new Date(b.date).toLocaleString();
+                if (b.entry && b.entry.replayText && b.entry.replayCharHistory) {
+                    card.addEventListener('click', () => App.replayTest(b.entry));
+                }
+            } else {
+                card.innerHTML = `
+                    <div class="bests-mode">${modeLabels[mode] || mode}</div>
+                    <div class="stat-value" style="color:var(--text-muted);font-size:1.2rem;">—</div>
+                    <div class="stat-label">No tests yet</div>
+                `;
+                card.style.opacity = '0.5';
+            }
+            container.appendChild(card);
+        }
     }
 };

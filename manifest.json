@@ -2,15 +2,19 @@
     "name": "KeyTrainer",
     "short_name": "KeyTrainer",
     "description": "Local keyboard training and typing test app",
-    "start_url": ".",
+    "start_url": "/",
     "display": "standalone",
     "background_color": "#1a1a2e",
     "theme_color": "#1a1a2e",
+    "categories": ["education", "utilities"],
+    "orientation": "portrait",
+    "prefer_related_applications": false,
     "icons": [
         {
             "src": "icons/icon.svg",
             "sizes": "any",
-            "type": "image/svg+xml"
+            "type": "image/svg+xml",
+            "purpose": "any maskable"
         }
     ]
 }

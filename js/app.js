@@ -358,6 +358,10 @@ const App = {
     ghostStartTime: 0,
     _ghostCaret: null,
 
+    language: 'en',
+    codeLang: 'javascript',
+    _lastResult: null,
+
     els: {},
 
     renderAchsPopover() {
@@ -453,6 +457,8 @@ const App = {
                 this.errorRecovery = s.errorRecovery || false;
                 this.layout = s.layout || 'qwerty';
                 this.ghostEnabled = s.ghost || false;
+                this.language = s.language || 'en';
+                this.codeLang = s.codeLang || 'javascript';
             }
         } catch (e) {}
 
@@ -506,7 +512,9 @@ const App = {
             beginnerMode: this.beginnerMode,
             errorRecovery: this.errorRecovery,
             layout: this.layout,
-            ghost: this.ghostEnabled
+            ghost: this.ghostEnabled,
+            language: this.language,
+            codeLang: this.codeLang
         }));
     },
 
@@ -744,9 +752,42 @@ const App = {
             });
         }
 
+        const langSelect = document.getElementById('language-select');
+        if (langSelect) {
+            const langs = { en: 'English', es: 'Spanish', fr: 'French', de: 'German', pt: 'Portuguese', it: 'Italian', nl: 'Dutch', ru: 'Russian', ja: 'Japanese (Romaji)', zh: 'Chinese (Pinyin)' };
+            for (const [k, v] of Object.entries(langs)) {
+                const opt = document.createElement('option');
+                opt.value = k; opt.textContent = v;
+                if (k === this.language) opt.selected = true;
+                langSelect.appendChild(opt);
+            }
+            langSelect.addEventListener('change', () => {
+                this.language = langSelect.value;
+                this.saveSettings();
+                if (['practice', 'words', 'zen'].includes(this.mode)) this.generateAndDisplay();
+            });
+        }
+        const codeLangSelect = document.getElementById('code-lang-select');
+        if (codeLangSelect) {
+            const codeLangs = { javascript: 'JavaScript', typescript: 'TypeScript', python: 'Python', html: 'HTML', css: 'CSS', java: 'Java', rust: 'Rust', go: 'Go', csharp: 'C#', ruby: 'Ruby', swift: 'Swift', kotlin: 'Kotlin', bash: 'Bash' };
+            for (const [k, v] of Object.entries(codeLangs)) {
+                const opt = document.createElement('option');
+                opt.value = k; opt.textContent = v;
+                if (k === this.codeLang) opt.selected = true;
+                codeLangSelect.appendChild(opt);
+            }
+            codeLangSelect.addEventListener('change', () => {
+                this.codeLang = codeLangSelect.value;
+                this.saveSettings();
+                if (this.mode === 'code') this.generateAndDisplay();
+            });
+        }
+        this._setupThemeEditor();
+
         this.els.dashRestart.addEventListener('click', () => this.restartTest());
         document.getElementById('dash-drill')?.addEventListener('click', () => this.startWeaknessDrill());
         document.getElementById('dash-missed')?.addEventListener('click', () => this.startMissedWordDrill());
+        document.getElementById('dash-share')?.addEventListener('click', () => this.shareResult());
 
         document.getElementById('journal-stop')?.addEventListener('click', () => {
             if (this.mode === 'journal' && this.isJournal) this._finishJournal();
@@ -871,6 +912,23 @@ const App = {
             this._initJournal();
             return;
         }
+
+        if (mode === 'code') {
+            document.getElementById('time-setting').style.display = 'none';
+            document.getElementById('word-count-setting').style.display = 'none';
+            document.getElementById('language-setting').style.display = 'none';
+            document.getElementById('code-lang-setting').style.display = '';
+            document.getElementById('beginner-setting').style.display = 'none';
+            document.getElementById('recovery-setting').style.display = 'none';
+            document.getElementById('punctuation-setting').style.display = 'none';
+            document.body.classList.remove('zen-mode');
+            this.showTypingInterface();
+            this.generateAndDisplay();
+            return;
+        }
+
+        document.getElementById('code-lang-setting').style.display = 'none';
+        document.getElementById('language-setting').style.display = '';
 
         document.body.classList.remove('zen-mode');
         this.showTypingInterface();
@@ -1195,10 +1253,32 @@ const App = {
         return selected.join(' ');
     },
 
+    _getWordList() {
+        const lang = WORD_LISTS[this.language];
+        if (!lang) return this.difficulty === 'easy' ? WORDS_EASY : this.difficulty === 'hard' ? WORDS_HARD : WORDS_NORMAL;
+        if (this.difficulty === 'easy') return lang.easy || lang.normal;
+        if (this.difficulty === 'hard') return lang.hard || lang.normal;
+        if (this.difficulty === 'adaptive') {
+            const base = lang.normal || WORDS_NORMAL;
+            const easy = lang.easy || WORDS_EASY;
+            return [...easy, ...base, ...(lang.hard || WORDS_HARD)];
+        }
+        return lang.normal || WORDS_NORMAL;
+    },
+
     generateText() {
-        const wordList = this.difficulty === 'easy' ? WORDS_EASY :
-                         this.difficulty === 'hard' ? WORDS_HARD :
-                         this.difficulty === 'adaptive' ? [...WORDS_EASY, ...WORDS_NORMAL, ...WORDS_HARD] : WORDS_NORMAL;
+        if (this.mode === 'code') {
+            const snippets = CODE_SNIPPETS[this.codeLang];
+            if (!snippets || snippets.length === 0) return 'console.log("hello world");';
+            const selected = [];
+            const count = Math.max(5, this.timeLimit * 2);
+            for (let i = 0; i < count; i++) {
+                selected.push(snippets[Math.floor(Math.random() * snippets.length)]);
+            }
+            return selected.join('\n');
+        }
+
+        const wordList = this._getWordList();
         let words;
 
         if (this.mode === 'practice') {
@@ -1218,7 +1298,7 @@ const App = {
         } else if (this.mode === 'zen') {
             words = [];
             for (let i = 0; i < 30; i++) {
-                words.push(wordList[Math.floor(Math.random() * wordList.length)]);
+                words.push(this.difficulty === 'adaptive' ? this._weightedWordSelect(wordList) : wordList[Math.floor(Math.random() * wordList.length)]);
             }
         } else {
             return '';
@@ -1524,6 +1604,33 @@ const App = {
         if (e.key === 't' || e.key === 'T') {
             if (this.isReplaying || this.isRunning) return;
             this.toggleTheme();
+            return;
+        }
+
+        if (e.key === '.' && !e.repeat) {
+            if (this.isReplaying || this.isRunning) return;
+            const editor = document.getElementById('theme-editor');
+            if (editor) {
+                editor.style.display = editor.style.display === 'flex' ? 'none' : 'flex';
+                if (editor.style.display === 'flex' && this._setupThemeEditor) {
+                    this._setupThemeEditor();
+                    const inputs = {
+                        bg: document.getElementById('te-bg'), text: document.getElementById('te-text'),
+                        muted: document.getElementById('te-muted'), accent: document.getElementById('te-accent'),
+                        border: document.getElementById('te-border'), key: document.getElementById('te-key'),
+                        sub: document.getElementById('te-sub'), error: document.getElementById('te-error')
+                    };
+                    const getComputed = (prop) => getComputedStyle(document.body).getPropertyValue(prop).trim();
+                    inputs.bg.value = this._toHex(getComputed('--bg-primary'));
+                    inputs.text.value = this._toHex(getComputed('--text-primary'));
+                    inputs.muted.value = this._toHex(getComputed('--text-muted') || '#6b7280');
+                    inputs.accent.value = this._toHex(getComputed('--accent') || '#e94560');
+                    inputs.border.value = this._toHex(getComputed('--border') || '#2d2d5e');
+                    inputs.key.value = this._toHex(getComputed('--key-bg') || '#1e1e3f');
+                    inputs.sub.value = this._toHex(getComputed('--bg-secondary') || '#16213e');
+                    inputs.error.value = this._toHex(getComputed('--error') || '#ef4444');
+                }
+            }
             return;
         }
 
@@ -1927,6 +2034,7 @@ const App = {
     },
 
     showResults(result, isNewBest) {
+        this._lastResult = result;
         const charStr = `${result.correctChars}/${result.incorrectChars}/${result.missedChars}/${result.totalChars}`;
         this.els.dashWpm.textContent = result.wpm;
         this.els.dashAcc.textContent = result.accuracy + '%';
@@ -1963,6 +2071,38 @@ const App = {
 
         this.renderTelemetryChart(result.elapsed);
         this.renderWordChart();
+    },
+
+    shareResult() {
+        const r = this._lastResult;
+        if (!r) return;
+        const date = new Date(r.timestamp || Date.now()).toLocaleString();
+        const card = [
+            `KeyTrainer — ${r.mode.toUpperCase()} Test`,
+            `──────────────────────────────`,
+            `WPM:    ${r.wpm}  (raw: ${r.rawWpm})`,
+            `Acc:    ${r.accuracy}%`,
+            `Time:   ${r.elapsed}s`,
+            `Chars:  ${r.correctChars}/${r.incorrectChars}/${r.missedChars}/${r.totalChars}`,
+            `Cons:   ${r.consistency}%`,
+            r.difficulty ? `Diff:   ${r.difficulty}` : '',
+            `Date:   ${date}`,
+            `──────────────────────────────`,
+            `https://keytrainer-app.vercel.app`
+        ].filter(Boolean).join('\n');
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(card).then(() => {
+                const btn = document.getElementById('dash-share');
+                if (btn) { btn.textContent = 'Copied!'; setTimeout(() => { btn.textContent = 'Share'; }, 2000); }
+            });
+        } else {
+            const ta = document.createElement('textarea');
+            ta.value = card; ta.style.position = 'fixed'; ta.style.left = '-9999px';
+            document.body.appendChild(ta); ta.select();
+            document.execCommand('copy'); document.body.removeChild(ta);
+            const btn = document.getElementById('dash-share');
+            if (btn) { btn.textContent = 'Copied!'; setTimeout(() => { btn.textContent = 'Share'; }, 2000); }
+        }
     },
 
     async saveTestResult(result) {
@@ -2519,6 +2659,123 @@ const App = {
         });
         if (!silent) {
             localStorage.setItem('keytrainer_accent', color);
+        }
+    },
+
+    _setupThemeEditor() {
+        const toggle = document.getElementById('te-toggle');
+        const editor = document.getElementById('theme-editor');
+        const close = document.getElementById('theme-editor-close');
+        const save = document.getElementById('te-save');
+        const apply = document.getElementById('te-apply');
+        const nameInput = document.getElementById('te-name');
+        const list = document.getElementById('te-list');
+
+        if (!toggle || !editor) return;
+
+        const inputs = {
+            bg: document.getElementById('te-bg'),
+            text: document.getElementById('te-text'),
+            muted: document.getElementById('te-muted'),
+            accent: document.getElementById('te-accent'),
+            border: document.getElementById('te-border'),
+            key: document.getElementById('te-key'),
+            sub: document.getElementById('te-sub'),
+            error: document.getElementById('te-error')
+        };
+
+        const getComputed = (prop) => getComputedStyle(document.body).getPropertyValue(prop).trim();
+        const loadIntoInputs = () => {
+            inputs.bg.value = this._toHex(getComputed('--bg-primary'));
+            inputs.text.value = this._toHex(getComputed('--text-primary'));
+            inputs.muted.value = this._toHex(getComputed('--text-muted') || '#6b7280');
+            inputs.accent.value = this._toHex(getComputed('--accent') || '#e94560');
+            inputs.border.value = this._toHex(getComputed('--border') || '#2d2d5e');
+            inputs.key.value = this._toHex(getComputed('--key-bg') || '#1e1e3f');
+            inputs.sub.value = this._toHex(getComputed('--bg-secondary') || '#16213e');
+            inputs.error.value = this._toHex(getComputed('--error') || '#ef4444');
+        };
+
+        toggle.addEventListener('click', () => {
+            const vis = editor.style.display === 'flex' ? 'none' : 'flex';
+            editor.style.display = vis;
+            if (vis === 'flex') loadIntoInputs();
+        });
+
+        close.addEventListener('click', () => { editor.style.display = 'none'; });
+
+        const applyTheme = () => {
+            document.documentElement.style.setProperty('--bg-primary', inputs.bg.value);
+            document.documentElement.style.setProperty('--text-primary', inputs.text.value);
+            document.documentElement.style.setProperty('--text-muted', inputs.muted.value);
+            document.documentElement.style.setProperty('--accent', inputs.accent.value);
+            document.documentElement.style.setProperty('--accent-hover', lightenHex(inputs.accent.value, 40));
+            document.documentElement.style.setProperty('--border', inputs.border.value);
+            document.documentElement.style.setProperty('--key-bg', inputs.key.value);
+            document.documentElement.style.setProperty('--bg-secondary', inputs.sub.value);
+            document.documentElement.style.setProperty('--error', inputs.error.value);
+            document.body.classList.toggle('light', false);
+        };
+
+        apply.addEventListener('click', applyTheme);
+
+        save.addEventListener('click', () => {
+            const name = nameInput.value.trim() || 'Custom ' + Date.now();
+            const theme = {
+                bg: inputs.bg.value, text: inputs.text.value, muted: inputs.muted.value,
+                accent: inputs.accent.value, border: inputs.border.value, key: inputs.key.value,
+                sub: inputs.sub.value, error: inputs.error.value
+            };
+            const customs = JSON.parse(localStorage.getItem('keytrainer_custom_themes') || '{}');
+            customs[name] = theme;
+            localStorage.setItem('keytrainer_custom_themes', JSON.stringify(customs));
+            nameInput.value = '';
+            this._renderThemeList(list, inputs, applyTheme);
+        });
+
+        this._renderThemeList(list, inputs, applyTheme);
+
+        const teToggle = document.getElementById('themes-toggle');
+        if (teToggle) teToggle.addEventListener('click', () => { editor.style.display = 'flex'; loadIntoInputs(); });
+    },
+
+    _toHex(color) {
+        if (color.startsWith('#')) return color;
+        const ctx = document.createElement('canvas').getContext('2d');
+        ctx.fillStyle = color;
+        return ctx.fillStyle;
+    },
+
+    _renderThemeList(container, inputs, applyFn) {
+        if (!container) return;
+        const customs = JSON.parse(localStorage.getItem('keytrainer_custom_themes') || '{}');
+        container.innerHTML = '';
+        for (const [name, t] of Object.entries(customs)) {
+            const row = document.createElement('div');
+            row.className = 'te-list-row';
+            row.innerHTML = `<span>${name}</span><span class="te-preview" style="background:${t.bg};color:${t.text};border:1px solid ${t.border};padding:2px 6px;border-radius:4px;">Aa</span>`;
+            const loadBtn = document.createElement('button');
+            loadBtn.className = 'option-btn';
+            loadBtn.textContent = 'Load';
+            loadBtn.addEventListener('click', () => {
+                inputs.bg.value = t.bg; inputs.text.value = t.text; inputs.muted.value = t.muted;
+                inputs.accent.value = t.accent; inputs.border.value = t.border; inputs.key.value = t.key;
+                inputs.sub.value = t.sub; inputs.error.value = t.error;
+                applyFn();
+                localStorage.setItem('keytrainer_theme', 'custom');
+            });
+            const delBtn = document.createElement('button');
+            delBtn.className = 'option-btn';
+            delBtn.textContent = '×';
+            delBtn.style.color = 'var(--error)';
+            delBtn.addEventListener('click', () => {
+                delete customs[name];
+                localStorage.setItem('keytrainer_custom_themes', JSON.stringify(customs));
+                this._renderThemeList(container, inputs, applyFn);
+            });
+            row.appendChild(loadBtn);
+            row.appendChild(delBtn);
+            container.appendChild(row);
         }
     }
 };
