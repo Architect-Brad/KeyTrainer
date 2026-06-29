@@ -75,12 +75,12 @@
                     </button>
                     <div class="color-popover" id="color-popover"></div>
                 </div>
-                <button class="icon-btn" id="theme-toggle" title="Toggle theme">
+                <button class="icon-btn" id="theme-toggle" title="Toggle theme (T)" data-shortcut="T">
                     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
                     </svg>
                 </button>
-                <button class="icon-btn" id="focus-toggle" title="Toggle focus mode (F)">
+                <button class="icon-btn" id="focus-toggle" title="Toggle focus mode (F)" data-shortcut="F">
                     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
                     </svg>
@@ -244,6 +244,10 @@
                 <div class="chart-container">
                     <h3 class="chart-title">WPM Distribution</h3>
                     <canvas id="distribution-chart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <h3 class="chart-title">Time of Day</h3>
+                    <canvas id="timeofday-chart"></canvas>
                 </div>
                 <div class="chart-container full-width">
                     <h3 class="chart-title">Performance by Mode</h3>

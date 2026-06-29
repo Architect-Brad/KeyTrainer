@@ -528,6 +528,56 @@ const Stats = {
                 }
             }
         });
+
+        this.charts.timeofday = new Chart(this.createCtx('timeofday-chart'), {
+            type: 'bar',
+            data: { labels: [], datasets: [{
+                label: 'Avg WPM',
+                data: [],
+                backgroundColor: '#a78bfa',
+                borderRadius: 4,
+                borderSkipped: false
+            }]},
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        backgroundColor: 'rgba(0,0,0,0.85)',
+                        titleFont: { size: 11, family: "'JetBrains Mono',monospace" },
+                        bodyFont: { size: 11, family: "'JetBrains Mono',monospace" },
+                        padding: 8,
+                        cornerRadius: 6,
+                        callbacks: {
+                            label: (ctx) => {
+                                const raw = ctx.raw;
+                                let s = `${ctx.parsed.y} wpm avg`;
+                                if (raw && raw._meta) {
+                                    if (raw._meta.tests) s += `  (${raw._meta.tests} tests)`;
+                                }
+                                return s;
+                            }
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: tickColor, font: { size: 10 } }
+                    },
+                    y: {
+                        grid: { color: gridColor, drawBorder: false },
+                        ticks: { color: tickColor, font: { size: 10 } },
+                        beginAtZero: true
+                    }
+                },
+                animation: {
+                    duration: 800,
+                    easing: 'easeOutQuart'
+                }
+            }
+        });
     },
 
     async load() {
@@ -543,6 +593,7 @@ const Stats = {
         this.renderDailyChart(allTests);
         this.renderWeeklyChart(allTests);
         this.renderDistributionChart(allTests);
+        this.renderTimeOfDayChart(allTests);
         this.renderModeChart(allTests);
         this.renderRadarChart(allTests);
         this.renderHeatmap(keyStats);
@@ -748,6 +799,49 @@ const Stats = {
 
         chart.data.labels = nonZero.map(b => b.label);
         chart.data.datasets[0].data = filteredCounts;
+        chart.update('none');
+    },
+
+    renderTimeOfDayChart(allTests) {
+        const chart = this.charts.timeofday;
+        if (!chart || allTests.length === 0) return;
+
+        const hourly = {};
+        allTests.forEach(t => {
+            if (!t.date) return;
+            const d = new Date(t.date);
+            const hour = d.getHours();
+            if (!hourly[hour]) hourly[hour] = { wpm: [], count: 0 };
+            hourly[hour].wpm.push(t.wpm);
+            hourly[hour].count++;
+        });
+
+        const labels = Array.from({ length: 24 }, (_, i) => {
+            const h = i % 12 || 12;
+            const ampm = i < 12 ? 'AM' : 'PM';
+            return `${h}${ampm}`;
+        });
+        const data = [];
+        for (let i = 0; i < 24; i++) {
+            const entry = hourly[i];
+            if (entry && entry.wpm.length > 0) {
+                const avg = Math.round(entry.wpm.reduce((a, b) => a + b, 0) / entry.wpm.length);
+                data.push({ y: avg, _meta: { tests: entry.count } });
+            } else {
+                data.push({ y: 0, _meta: { tests: 0 } });
+            }
+        }
+
+        const accent = this.accentColor();
+        const maxVal = Math.max(...data.map(d => d.y), 1);
+        chart.data.labels = labels;
+        chart.data.datasets[0].data = data;
+        chart.data.datasets[0].backgroundColor = data.map(d => {
+            if (d.y === 0) return 'rgba(255,255,255,0.04)';
+            const i = d.y / maxVal;
+            const alpha = 0.35 + i * 0.65;
+            return accent + Math.round(alpha * 255).toString(16).padStart(2, '0');
+        });
         chart.update('none');
     },
 

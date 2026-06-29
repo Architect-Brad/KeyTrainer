@@ -1429,6 +1429,19 @@ body.focus-mode .main-area {
     50% { box-shadow: 0 0 16px var(--accent), 0 0 32px rgba(233, 69, 96, 0.35); }
 }
 
+/* Hidden input visible for mobile journal support */
+#hidden-input.journal-active {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 1px;
+    height: 1px;
+    opacity: 0.01;
+    pointer-events: none;
+    display: block;
+    z-index: -1;
+}
+
 .shortcuts-overlay {
     position: fixed;
     inset: 0;
@@ -1898,4 +1911,24 @@ body.zen-mode #typing-display {
 .replay-btn.disabled {
     opacity: 0.3;
     cursor: not-allowed;
+}
+
+/* Inline shortcut kbd badge on header icon buttons */
+.icon-btn[data-shortcut]::after {
+    content: attr(data-shortcut);
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    font-size: 0.55rem;
+    font-weight: 700;
+    background: var(--accent);
+    color: var(--bg-primary);
+    padding: 1px 4px;
+    border-radius: 3px;
+    line-height: 1.2;
+    opacity: 0.8;
+    pointer-events: none;
+}
+.icon-btn {
+    position: relative;
 }

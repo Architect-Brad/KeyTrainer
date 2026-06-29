@@ -820,6 +820,7 @@ const App = {
 
         this.mode = mode;
         document.body.classList.remove('zen-mode');
+        if (this.isJournal) this._cleanupJournalInput();
         this.isJournal = false;
 
         document.getElementById('journal-words-stat').style.display = 'none';
@@ -927,7 +928,29 @@ const App = {
         this.totalKeystrokes = 0;
         this.isJournal = true;
         this.isFinished = false;
-        this.els.typingContainer.focus();
+        const hi = document.getElementById('hidden-input');
+        hi.value = '';
+        hi.classList.add('journal-active');
+        this._journalInputHandler = (e) => {
+            const input = e.target;
+            if (e.inputType === 'insertText' && e.data) {
+                for (const char of e.data) {
+                    if (char === '\n') this._journalNewline();
+                    else { this._journalTypeChar(char); Keyboard.pressKey(char); }
+                }
+            } else if (e.inputType === 'insertFromPaste' && e.data) {
+                for (const char of e.data) {
+                    if (char === '\n') this._journalNewline();
+                    else { this._journalTypeChar(char); Keyboard.pressKey(char); }
+                }
+            } else if (e.inputType === 'deleteContentBackward') {
+                this._journalDelete();
+                Keyboard.pressKey('Backspace');
+            }
+            input.value = '';
+        };
+        hi.addEventListener('input', this._journalInputHandler);
+        hi.focus();
         this.updateLiveStats();
     },
 
@@ -1003,7 +1026,18 @@ const App = {
         container.scrollTop = container.scrollHeight;
     },
 
+    _cleanupJournalInput() {
+        const hi = document.getElementById('hidden-input');
+        if (this._journalInputHandler) {
+            hi.removeEventListener('input', this._journalInputHandler);
+            this._journalInputHandler = null;
+        }
+        hi.classList.remove('journal-active');
+        hi.value = '';
+    },
+
     _finishJournal() {
+        this._cleanupJournalInput();
         this.isJournal = false;
         this.stopTest(false);
         const elapsed = (Date.now() - this.startTime) / 1000;
@@ -1477,9 +1511,6 @@ const App = {
                 return;
             }
             if (e.key.length === 1) {
-                e.preventDefault();
-                this._journalTypeChar(e.key);
-                Keyboard.pressKey(e.key);
                 return;
             }
             return;
@@ -1487,6 +1518,12 @@ const App = {
 
         if (e.key === 'f' || e.key === 'F') {
             this.toggleFocusMode();
+            return;
+        }
+
+        if (e.key === 't' || e.key === 'T') {
+            if (this.isReplaying || this.isRunning) return;
+            this.toggleTheme();
             return;
         }
 
@@ -1521,7 +1558,7 @@ const App = {
         this.startTime = Date.now();
         this.ghostStartTime = Date.now();
         this.timerId = setInterval(() => this.tick(), 100);
-        AntiCheat.start();
+        if (!this.beginnerMode) AntiCheat.start();
 
         if (this.ghostEnabled && this.mode === 'practice') {
             try {
