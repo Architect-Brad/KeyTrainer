@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KeyTrainer - Typing Practice & Tests</title>
+    <link rel="stylesheet" href="css/style.css">
+    <meta name="description" content="Local keyboard training and typing test app">
+    <meta name="theme-color" content="#1a1a2e">
+    <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+</head>
+<body>
+    <div id="app">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <svg class="logo-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="2" y="4" width="20" height="16" rx="2"/>
+                    <path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M6 12h.01M10 12h.01M14 12h.01M18 12h.01M8 16h8"/>
+                </svg>
+                <h1>KeyTrainer</h1>
+            </div>
+            <nav class="nav">
+                <button class="nav-btn active" data-mode="practice" title="Adaptive Practice">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+                    </svg>
+                    Practice
+                </button>
+                <button class="nav-btn" data-mode="words" title="Word Typing Test">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M4 7h16M4 12h12M4 17h8"/>
+                    </svg>
+                    Words
+                </button>
+                <button class="nav-btn" data-mode="quotes" title="Quote Typing Test">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z"/>
+                        <path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3c0 1 0 1 1 1z"/>
+                    </svg>
+                    Quotes
+                </button>
+                <button class="nav-btn" data-mode="custom" title="Custom Text">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                    </svg>
+                    Custom
+                </button>
+                <button class="nav-btn" data-mode="stats" title="View Statistics">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M18 20V10M12 20V4M6 20v-6"/>
+                    </svg>
+                    Stats
+                </button>
+                <button class="nav-btn" data-mode="journal" title="Free-form typing">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+                    </svg>
+                    Journal
+                </button>
+                <button class="nav-btn" data-mode="zen" title="Minimalist typing (Esc to exit)">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/>
+                    </svg>
+                    Zen
+                </button>
+            </nav>
+            <div class="header-actions">
+                <div class="color-picker-wrap">
+                    <button class="icon-btn" id="color-toggle" title="Accent color">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3" fill="currentColor"/>
+                        </svg>
+                    </button>
+                    <div class="color-popover" id="color-popover"></div>
+                </div>
+                <button class="icon-btn" id="theme-toggle" title="Toggle theme">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+                    </svg>
+                </button>
+                <button class="icon-btn" id="focus-toggle" title="Toggle focus mode (F)">
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+                    </svg>
+                </button>
+                <div class="achs-wrap">
+                    <button class="icon-btn" id="achs-toggle" title="Achievements">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5C7 4 8 3 12 3s5 1 7.5 1a2.5 2.5 0 0 1 0 5H18"/>
+                            <path d="M18 9v1a6 6 0 0 1-12 0V9"/>
+                            <path d="M12 15v3"/>
+                            <path d="M8 21h8"/>
+                            <path d="M9 18l-1 3"/>
+                            <path d="M15 18l1 3"/>
+                        </svg>
+                    </button>
+                    <div class="achs-popover" id="achs-popover"></div>
+                </div>
+                <div class="goals-wrap">
+                    <button class="icon-btn" id="goals-toggle" title="Daily goals">
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>
+                        </svg>
+                    </button>
+                    <div class="goals-popover" id="goals-popover"></div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Settings Bar -->
+        <div class="settings-bar" id="settings-bar">
+            <div class="setting-group" id="time-setting">
+                <label>Time:</label>
+                <button class="option-btn" data-time="15">15</button>
+                <button class="option-btn active" data-time="30">30</button>
+                <button class="option-btn" data-time="60">60</button>
+                <button class="option-btn" data-time="120">120</button>
+            </div>
+            <div class="setting-group" id="word-count-setting">
+                <label>Words:</label>
+                <button class="option-btn" data-words="25">25</button>
+                <button class="option-btn active" data-words="50">50</button>
+                <button class="option-btn" data-words="100">100</button>
+            </div>
+            <div class="setting-group" id="difficulty-setting">
+                <label>Difficulty:</label>
+                <button class="option-btn" data-difficulty="easy">Easy</button>
+                <button class="option-btn active" data-difficulty="normal">Normal</button>
+                <button class="option-btn" data-difficulty="hard">Hard</button>
+                <button class="option-btn" data-difficulty="adaptive">Adaptive</button>
+            </div>
+            <div class="setting-group" id="beginner-setting">
+                <label>Beginner:</label>
+                <button class="option-btn active" data-beginner="off">Off</button>
+                <button class="option-btn" data-beginner="on">On</button>
+            </div>
+            <div class="setting-group" id="recovery-setting">
+                <label>Recovery:</label>
+                <button class="option-btn active" data-error-recovery="off">Off</button>
+                <button class="option-btn" data-error-recovery="on">On</button>
+            </div>
+            <div class="setting-group" id="punctuation-setting">
+                <label>Punctuation:</label>
+                <button class="option-btn active" data-punctuation="off">Off</button>
+                <button class="option-btn" data-punctuation="on">On</button>
+            </div>
+            <div class="setting-group" id="layout-setting">
+                <label>Layout:</label>
+                <button class="option-btn active" data-layout="qwerty">QWERTY</button>
+                <button class="option-btn" data-layout="colemak">Colemak</button>
+                <button class="option-btn" data-layout="dvorak">Dvorak</button>
+            </div>
+            <div class="setting-group" id="sounds-setting">
+                <label>Sounds:</label>
+                <button class="option-btn active" data-sounds="off">Off</button>
+                <button class="option-btn" data-sounds="on">On</button>
+            </div>
+            <div class="setting-group" id="sound-pack-setting">
+                <label>Pack:</label>
+                <button class="option-btn active" data-sound-pack="default">Default</button>
+                <button class="option-btn" data-sound-pack="mechanical">Mechanical</button>
+                <button class="option-btn" data-sound-pack="typewriter">Typewriter</button>
+            </div>
+            <div class="setting-group" id="theme-setting">
+                <label>Theme:</label>
+                <select id="theme-select" class="option-btn" style="padding:0.35rem 0.75rem;background:transparent;border:1px solid var(--border);border-radius:6px;color:var(--text-muted);font-size:0.8rem;cursor:pointer;"></select>
+            </div>
+            <div class="setting-group" id="cursor-speed-setting">
+                <label>Cursor:</label>
+                <button class="option-btn" data-cursor-speed="slow">Slow</button>
+                <button class="option-btn active" data-cursor-speed="medium">Med</button>
+                <button class="option-btn" data-cursor-speed="fast">Fast</button>
+            </div>
+            <div class="setting-group" id="cursor-style-setting">
+                <label>Style:</label>
+                <button class="option-btn active" data-cursor-style="default">|</button>
+                <button class="option-btn" data-cursor-style="underline">_</button>
+                <button class="option-btn" data-cursor-style="block">▮</button>
+                <button class="option-btn" data-cursor-style="outline">□</button>
+            </div>
+            <div class="setting-group" id="ghost-setting">
+                <label>Ghost:</label>
+                <button class="option-btn active" data-ghost="off">Off</button>
+                <button class="option-btn" data-ghost="on">On</button>
+            </div>
+        </div>
+
+        <!-- Custom Text Input (hidden by default) -->
+        <div class="custom-input-container" id="custom-input-container">
+            <textarea id="custom-text" placeholder="Type or paste your custom text here..."></textarea>
+            <input type="file" id="file-input" accept=".txt,.md,.csv" style="display:none">
+            <button id="load-file-btn" class="secondary-btn" style="margin-top:0.5rem;">📄 Load File</button>
+            <button id="start-custom" class="primary-btn">Start Typing</button>
+        </div>
+
+        <!-- Stats Panel (hidden by default) -->
+        <div class="stats-panel" id="stats-panel">
+            <h2>Your Progress</h2>
+            <div class="stats-summary">
+                <div class="stat-card">
+                    <span class="stat-value" id="total-tests">0</span>
+                    <span class="stat-label">Tests Completed</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-value" id="avg-wpm">0</span>
+                    <span class="stat-label">Avg WPM</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-value" id="avg-accuracy">0%</span>
+                    <span class="stat-label">Avg Accuracy</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-value" id="best-wpm">0</span>
+                    <span class="stat-label">Best WPM</span>
+                </div>
+            </div>
+            <div class="charts-grid">
+                <div class="chart-container">
+                    <h3 class="chart-title">WPM Trend</h3>
+                    <canvas id="wpm-chart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <h3 class="chart-title">Accuracy Trend</h3>
+                    <canvas id="accuracy-chart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <h3 class="chart-title">Consistency Trend</h3>
+                    <canvas id="consistency-chart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <h3 class="chart-title">Skill Radar</h3>
+                    <canvas id="radar-chart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <h3 class="chart-title">Weekly Average WPM</h3>
+                    <canvas id="weekly-chart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <h3 class="chart-title">Daily Average WPM</h3>
+                    <canvas id="daily-chart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <h3 class="chart-title">WPM Distribution</h3>
+                    <canvas id="distribution-chart"></canvas>
+                </div>
+                <div class="chart-container full-width">
+                    <h3 class="chart-title">Performance by Mode</h3>
+                    <canvas id="mode-chart"></canvas>
+                </div>
+            </div>
+            <div class="key-heatmap">
+                <h3>Key Accuracy Heatmap</h3>
+                <div id="heatmap" class="heatmap-grid"></div>
+            </div>
+            <div class="key-heatmap" id="finger-section">
+                <h3>Finger Workload &amp; Balance</h3>
+                <p class="chart-title" style="margin-bottom:0.75rem;">Load, accuracy, and speed per finger</p>
+                <div id="finger-grid" class="heatmap-grid"></div>
+            </div>
+            <div class="key-heatmap" id="wordbank-section">
+                <h3>Most Missed Words</h3>
+                <p class="chart-title" style="margin-bottom:0.75rem;">Words you frequently mistype — click to drill</p>
+                <div id="wordbank-grid" class="heatmap-grid"></div>
+            </div>
+            <div class="key-heatmap" id="repeat-section">
+                <h3>Key Repeat Speed</h3>
+                <p class="chart-title" style="margin-bottom:0.75rem;">Avg gap (ms) between consecutive same-key presses</p>
+                <div id="repeat-grid" class="heatmap-grid"></div>
+            </div>
+            <div class="key-heatmap" id="confusion-section">
+                <h3>Confusion Matrix</h3>
+                <p class="chart-title" style="margin-bottom:0.75rem;">Which keys do you mistype, and what do you press instead?</p>
+                <div id="confusion-matrix" class="heatmap-grid"></div>
+            </div>
+            <div class="key-heatmap" id="bigram-section">
+                <h3>Bigram Analysis</h3>
+                <p class="chart-title" style="margin-bottom:0.75rem;">Accuracy &amp; speed for common letter pairs</p>
+                <div id="bigram-grid" class="heatmap-grid"></div>
+            </div>
+            <div class="personal-bests">
+                <h3>Personal Bests</h3>
+                <div id="personal-bests" class="bests-grid"></div>
+            </div>
+            <div class="history-section" id="history-section">
+                <h3>Test History</h3>
+                <div class="table-wrap">
+                    <table id="history-table">
+                        <thead>
+                            <tr><th>Date</th><th>Mode</th><th>WPM</th><th>Acc</th><th>Raw</th><th>Cons</th><th>AC</th><th>Replay</th></tr>
+                        </thead>
+                        <tbody id="history-body"></tbody>
+                    </table>
+                </div>
+            </div>
+            <button id="clear-stats" class="danger-btn">Clear All Data</button>
+            <button id="export-data" class="secondary-btn" style="margin-left:0.5rem;">Export Data</button>
+        </div>
+
+        <!-- Main Typing Area -->
+        <main class="main-area" id="main-area">
+            <!-- Live Stats -->
+            <div class="live-stats">
+                <div class="live-stat">
+                    <span class="live-value" id="live-wpm">0</span>
+                    <span class="live-label">WPM</span>
+                </div>
+                <div class="live-stat">
+                    <span class="live-value" id="live-accuracy">100%</span>
+                    <span class="live-label">Accuracy</span>
+                </div>
+                <div class="live-stat">
+                    <span class="live-value" id="live-time">0</span>
+                    <span class="live-label">Time</span>
+                </div>
+                <div class="live-stat">
+                    <span class="live-value" id="live-streak">0</span>
+                    <span class="live-label">Streak</span>
+                </div>
+                <div class="live-stat" id="ghost-wpm-stat" style="display:none;">
+                    <span class="live-value" id="live-ghost-wpm">0</span>
+                    <span class="live-label">Ghost PB</span>
+                </div>
+                <div class="live-stat" id="journal-words-stat" style="display:none;">
+                    <span class="live-value" id="live-journal-words">0</span>
+                    <span class="live-label">Words</span>
+                </div>
+                <div class="live-stat" id="journal-chars-stat" style="display:none;">
+                    <span class="live-value" id="live-journal-chars">0</span>
+                    <span class="live-label">Chars</span>
+                </div>
+                <button id="journal-stop" class="primary-btn" style="display:none;padding:0.2rem 0.75rem;font-size:0.75rem;margin-left:auto;">Stop</button>
+            </div>
+
+            <!-- Replay Controls -->
+            <div class="replay-controls" id="replay-controls" style="display:none;">
+                <div class="replay-speed-group">
+                    <button class="replay-speed active" data-speed="0.5">½×</button>
+                    <button class="replay-speed" data-speed="1">1×</button>
+                    <button class="replay-speed" data-speed="2">2×</button>
+                    <button class="replay-speed" data-speed="4">4×</button>
+                </div>
+                <span class="replay-info">
+                    <span class="replay-label">Replaying</span>
+                    <span class="replay-progress" id="replay-progress">0 / 0</span>
+                </span>
+                <button class="replay-stop" id="replay-stop" title="Stop replay">■ Stop</button>
+            </div>
+
+            <!-- Typing Display -->
+            <div class="typing-container" id="typing-container">
+                <div id="typing-display"></div>
+            </div>
+
+            <div class="progress-track" id="progress-track">
+                <div class="progress-fill" id="progress-fill"></div>
+            </div>
+
+            <!-- Hidden Input -->
+            <input type="text" id="hidden-input" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+
+            <!-- Visual Keyboard -->
+            <div class="keyboard-container" id="keyboard-container">
+                <div class="keyboard" id="keyboard"></div>
+            </div>
+
+            <!-- Restart Hint -->
+            <div class="hint"><kbd>Tab</kbd>/<kbd>Esc</kbd> restart · <kbd>Bksp</kbd> char · <kbd>Ctrl</kbd>+<kbd>Bksp</kbd> word · <kbd>F</kbd> focus</div>
+        </main>
+
+        <!-- Results Dashboard (replaces typing area inline) -->
+        <div id="results-dashboard" class="hidden-state">
+            <div class="dash-header">
+                <h2>Test Complete! <span class="best-badge" id="best-badge">NEW BEST!</span><span class="cheat-badge" id="cheat-badge"></span></h2>
+            </div>
+            <div class="dash-stats-grid">
+                <div class="dash-stat"><span class="dash-label">wpm</span><span class="dash-value" id="dash-wpm">0</span></div>
+                <div class="dash-stat"><span class="dash-label">acc</span><span class="dash-value" id="dash-acc">0%</span></div>
+                <div class="dash-stat"><span class="dash-label">raw</span><span class="dash-value" id="dash-raw">0</span></div>
+                <div class="dash-stat"><span class="dash-label">chars</span><span class="dash-value" id="dash-chars">0/0/0/0</span></div>
+                <div class="dash-stat"><span class="dash-label">time</span><span class="dash-value" id="dash-time">0s</span></div>
+                <div class="dash-stat"><span class="dash-label">consistency</span><span class="dash-value" id="dash-cons">0%</span></div>
+            </div>
+            <div class="dash-chart-wrap">
+                <canvas id="telemetry-chart"></canvas>
+            </div>
+            <div class="dash-chart-wrap">
+                <h3 class="chart-title">WPM by Word</h3>
+                <canvas id="word-chart"></canvas>
+            </div>
+            <div class="dash-actions">
+                <button id="dash-restart" class="primary-btn">Next Test</button>
+                <button id="dash-drill" class="secondary-btn" style="margin-left:0.5rem;">Practice Weaknesses</button>
+                <button id="dash-missed" class="secondary-btn" style="margin-left:0.5rem;">Missed Words</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/caret.js"></script>
+    <script src="js/themes.js"></script>
+    <script src="js/stats.js"></script>
+    <script src="js/keyboard.js"></script>
+    <script src="js/sounds.js"></script>
+    <script src="js/anticheat.js"></script>
+    <script src="js/achievements.js"></script>
+    <script src="js/app.js"></script>
+<div id="shortcuts-overlay" class="shortcuts-overlay" style="display:none;">
+    <div class="shortcuts-modal">
+        <h3>Keyboard Shortcuts</h3>
+        <div class="shortcuts-grid">
+            <div class="shortcut-row"><kbd>Tab</kbd><span>Restart test</span></div>
+            <div class="shortcut-row"><kbd>Esc</kbd><span>Restart test / Exit zen / Exit journal</span></div>
+            <div class="shortcut-row"><kbd>F</kbd><span>Toggle focus mode</span></div>
+            <div class="shortcut-row"><kbd>?</kbd><span>Toggle this help</span></div>
+            <div class="shortcut-row"><kbd>Backspace</kbd><span>Delete last character</span></div>
+            <div class="shortcut-row"><kbd>Ctrl+Backspace</kbd><span>Delete last word</span></div>
+            <div class="shortcut-row"><kbd>Space</kbd><span>Complete current word</span></div>
+        </div>
+        <p class="shortcuts-hint">Press <kbd>?</kbd> or <kbd>Esc</kbd> to close</p>
+    </div>
+</div>
+</body>
+</html>
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         
